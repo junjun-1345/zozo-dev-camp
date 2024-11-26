@@ -19,6 +19,7 @@ export default function FigmaFile() {
   const [fileData, setFileData] = useState<FigmaFile | null>(null);
   const [frames, setFrames] = useState<Frame[]>([]);
   const [selectedFrame, setSelectedFrame] = useState<string | null>(null);
+  const [activeFrameId, setActiveFrameId] = useState<string | null>(null); // 選択中のフレーム
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -66,38 +67,53 @@ export default function FigmaFile() {
     }
   };
 
+  const handleFrameSelection = (frame: Frame) => {
+    setSelectedFrame(
+      `https://www.figma.com/embed?embed_host=share&url=https://www.figma.com/file/${fileData?.key}?node-id=${frame.id}`
+    );
+    setActiveFrameId(frame.id);
+  };
+
   return (
     <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      <h1>Figmaファイル情報取得</h1>
-      <input
-        type="text"
-        placeholder="FigmaファイルURLを入力"
-        value={url}
-        onChange={(e) => setUrl(e.target.value)}
-        style={{
-          width: "100%",
-          padding: "10px",
-          marginBottom: "10px",
-          fontSize: "16px",
-        }}
-      />
-      <button
-        onClick={handleFetchFile}
-        style={{
-          padding: "10px 20px",
-          fontSize: "16px",
-          backgroundColor: "#007BFF",
-          color: "#FFF",
-          border: "none",
-          cursor: "pointer",
-        }}
-        disabled={loading}
-      >
-        {loading ? "取得中..." : "ファイル情報を取得"}
-      </button>
+      <h1 style={{ textAlign: "center", marginBottom: "20px" }}>
+        Figmaファイル情報取得
+      </h1>
+      <div style={{ maxWidth: "600px", margin: "0 auto" }}>
+        <input
+          type="text"
+          placeholder="FigmaファイルURLを入力"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "10px",
+            marginBottom: "10px",
+            fontSize: "16px",
+            border: "1px solid #CCC",
+            borderRadius: "5px",
+          }}
+        />
+        <button
+          onClick={handleFetchFile}
+          style={{
+            width: "100%",
+            padding: "10px",
+            fontSize: "16px",
+            backgroundColor: "#007BFF",
+            color: "#FFF",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+          }}
+          disabled={loading}
+        >
+          {loading ? "取得中..." : "ファイル情報を取得"}
+        </button>
+      </div>
 
       {error && (
-        <p style={{ color: "red", marginTop: "10px" }}>
+        <p style={{ color: "red", marginTop: "10px", textAlign: "center" }}>
           <strong>{error}</strong>
         </p>
       )}
@@ -106,26 +122,44 @@ export default function FigmaFile() {
         <div
           style={{
             marginTop: "20px",
-            border: "1px solid #CCC",
             padding: "20px",
+            border: "1px solid #CCC",
+            borderRadius: "5px",
           }}
         >
-          <h2 style={{ marginTop: "20px" }}>フレーム選択</h2>
-          <ul>
+          <h2 style={{ textAlign: "center" }}>フレーム選択</h2>
+          <div
+            style={{
+              display: "flex",
+              overflowX: "auto",
+              borderBottom: "2px solid #CCC",
+              marginBottom: "20px",
+            }}
+          >
             {frames.map((frame) => (
-              <li key={frame.id}>
-                <button
-                  onClick={() =>
-                    setSelectedFrame(
-                      `https://www.figma.com/embed?embed_host=share&url=https://www.figma.com/file/${fileData.key}?node-id=${frame.id}`
-                    )
-                  }
-                >
-                  {frame.name}
-                </button>
-              </li>
+              <button
+                key={frame.id}
+                onClick={() => handleFrameSelection(frame)}
+                style={{
+                  flex: "0 0 auto",
+                  padding: "10px 20px",
+                  margin: "5px",
+                  backgroundColor:
+                    activeFrameId === frame.id ? "#007BFF" : "#FFF",
+                  color: activeFrameId === frame.id ? "#FFF" : "#000",
+                  border:
+                    activeFrameId === frame.id
+                      ? "2px solid #0056b3"
+                      : "1px solid #CCC",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                  textAlign: "center",
+                }}
+              >
+                {frame.name}
+              </button>
             ))}
-          </ul>
+          </div>
 
           {selectedFrame && (
             <iframe
@@ -133,8 +167,8 @@ export default function FigmaFile() {
               style={{
                 width: "100%",
                 height: "500px",
-                border: "none",
-                marginTop: "20px",
+                border: "1px solid #CCC",
+                borderRadius: "5px",
               }}
               allowFullScreen
             ></iframe>
