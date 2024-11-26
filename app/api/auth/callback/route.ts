@@ -10,7 +10,6 @@ interface TokenResponse {
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
-    // クエリパラメータを取得
     const { searchParams } = new URL(req.url);
     const code = searchParams.get("code");
     const returnedState = searchParams.get("state");
@@ -22,7 +21,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // クッキーから state を取得
     const cookies = req.headers.get("cookie") || "";
     const oauthState = cookies
       .split(";")
@@ -36,23 +34,16 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // クライアントIDとシークレットを Base64 エンコード
     const credentials = Buffer.from(
       `${process.env.FIGMA_CLIENT_ID}:${process.env.FIGMA_CLIENT_SECRET}`
     ).toString("base64");
 
-    // リクエストボディを作成
     const requestBody = new URLSearchParams({
       redirect_uri: process.env.REDIRECT_URI!,
       code,
       grant_type: "authorization_code",
     });
 
-    // デバッグ用ログ
-    console.log("Request Body:", requestBody.toString());
-    console.log("Authorization Header:", `Basic ${credentials}`);
-
-    // トークン取得リクエスト
     const tokenResponse: AxiosResponse<TokenResponse> = await axios.post(
       "https://api.figma.com/v1/oauth/token",
       requestBody.toString(),
@@ -67,19 +58,26 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     const { access_token, expires_in, refresh_token, user_id } =
       tokenResponse.data;
 
-    // デバッグ用ログ
-    console.log("Token Response:", tokenResponse.data);
+    const response = NextResponse.redirect(new URL("/", req.url));
 
-    // 必要に応じてトークンをクッキーやセッションに保存
-    return NextResponse.json({
-      message: "Token successfully retrieved",
-      accessToken: access_token,
-      expiresIn: expires_in,
-      refreshToken: refresh_token,
-      userId: user_id,
+    // クッキーにトークン情報を保存（Secure フラグや HttpOnly は適切に設定）
+    response.cookies.set("access_token", access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: expires_in,
     });
+    response.cookies.set("refresh_token", refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 30, // 30日間
+    });
+    response.cookies.set("user_id", user_id, {
+      httpOnly: false, // 必要ならフロントエンドでも利用可能に
+      secure: process.env.NODE_ENV === "production",
+    });
+
+    return response;
   } catch (error: unknown) {
-    // エラーの型を詳細化
     if (axios.isAxiosError(error) && error.response) {
       console.error("Error Response:", error.response.data);
       return NextResponse.json(
