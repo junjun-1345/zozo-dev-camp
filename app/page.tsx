@@ -34,6 +34,8 @@ export default function Home() {
           <h1>ようこそ、ユーザー {userId} さん</h1>
           <p>ログイン成功です。</p>
           <Link href={"/figma-design"}>ファイル表示</Link>
+          <br />
+          <Link href={"/figma-prototype"}>プロトタイプの表示</Link>
         </>
       )}
     </div>
