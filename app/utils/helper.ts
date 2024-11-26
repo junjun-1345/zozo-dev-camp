@@ -20,11 +20,3 @@ export const parseMessage = (message: string) => {
     : message; // ラベルを除いた本文
   return { label, content };
 };
-
-// コメントをラベルごとに分類
-const sortedComments = frameComments
-  .map((comment) => {
-    const { label, content } = parseMessage(comment.message);
-    return { ...comment, label, content };
-  })
-  .sort((a, b) => (a.label || "").localeCompare(b.label || "")); // ラベルでソート
