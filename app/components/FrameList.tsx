@@ -1,5 +1,6 @@
 import React from "react";
 import { Frame } from "../types";
+import { FaCommentDots } from "react-icons/fa"; // コメントアイコンをインポート
 
 type FrameListProps = {
   frames: Frame[];
@@ -17,14 +18,17 @@ export default function FrameList({
   return (
     <div
       style={{
-        flex: "0 0 200px",
-        overflowY: "scroll",
-        maxHeight: "500px",
-        borderRight: "1px solid #CCC",
-        paddingRight: "10px",
+        flex: "0 0 250px", // 幅を広げる
+        overflowY: "auto", // スクロール可能にする
+        height: "100%", // 親要素に基づいて高さを調整
+        padding: "10px",
+        backgroundColor: "#f9f9f9",
+        boxShadow: "2px 0 4px rgba(0, 0, 0, 0.1)", // 右側に軽い影を追加
       }}
     >
-      <h3>フレーム一覧</h3>
+      <h3 style={{ marginBottom: "20px", fontSize: "18px", color: "#333" }}>
+        フレーム一覧
+      </h3>
       {frames.map((frame) => (
         <button
           key={frame.id}
@@ -32,38 +36,34 @@ export default function FrameList({
           style={{
             display: "block",
             width: "100%",
-            padding: "10px",
-            marginBottom: "5px",
+            padding: "15px",
+            marginBottom: "10px",
             textAlign: "left",
             backgroundColor: activeFrameId === frame.id ? "#007BFF" : "#FFF",
             color: activeFrameId === frame.id ? "#FFF" : "#000",
-            border:
+            border: "none",
+            borderRadius: "8px",
+            boxShadow:
               activeFrameId === frame.id
-                ? "2px solid #0056b3"
-                : "1px solid #CCC",
-            borderRadius: "5px",
+                ? "0 2px 4px rgba(0, 0, 0, 0.2)"
+                : "0 1px 3px rgba(0, 0, 0, 0.1)",
             cursor: "pointer",
             position: "relative",
+            transition: "all 0.3s ease",
           }}
         >
           {frame.name}
           {commentedFrameIds.includes(frame.id) && (
-            <span
+            <FaCommentDots
               style={{
                 position: "absolute",
                 top: "50%",
-                right: "10px",
+                right: "15px",
                 transform: "translateY(-50%)",
-                backgroundColor: "red",
-                color: "white",
-                padding: "2px 6px",
-                borderRadius: "50%",
-                fontSize: "12px",
-                fontWeight: "bold",
+                color: "#888", // 弱い色に変更
+                fontSize: "16px",
               }}
-            >
-              !
-            </span>
+            />
           )}
         </button>
       ))}
