@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 
 type FigmaFile = {
   key: string;
@@ -10,9 +9,16 @@ type FigmaFile = {
   thumbnailUrl?: string;
 };
 
+type Frame = {
+  id: string;
+  name: string;
+};
+
 export default function FigmaFile() {
   const [url, setUrl] = useState("");
   const [fileData, setFileData] = useState<FigmaFile | null>(null);
+  const [frames, setFrames] = useState<Frame[]>([]);
+  const [selectedFrame, setSelectedFrame] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -33,7 +39,8 @@ export default function FigmaFile() {
       const data = await response.json();
 
       if (response.ok) {
-        setFileData(data);
+        setFileData({ key: fileKey, ...data });
+        await fetchFrames(fileKey); // フレームを取得
       } else {
         setError(`エラー: ${data.error || "ファイル情報の取得に失敗しました"}`);
       }
@@ -41,6 +48,21 @@ export default function FigmaFile() {
       setError("ファイル情報の取得中にエラーが発生しました");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFrames = async (fileKey: string) => {
+    try {
+      const response = await fetch(`/api/figma-files/${fileKey}`);
+      const data = await response.json();
+
+      if (response.ok) {
+        setFrames(data);
+      } else {
+        setError("フレーム情報の取得に失敗しました");
+      }
+    } catch {
+      setError("フレーム情報の取得中にエラーが発生しました");
     }
   };
 
@@ -88,28 +110,34 @@ export default function FigmaFile() {
             padding: "20px",
           }}
         >
-          <h2>ファイル情報</h2>
-          <p>
-            <strong>名前:</strong> {fileData.name}
-          </p>
-          <p>
-            <strong>最終更新日:</strong>{" "}
-            {new Date(fileData.lastModified).toLocaleString()}
-          </p>
-          {fileData.thumbnailUrl && (
-            <>
-              <p>
-                <strong>サムネイル:</strong>
-              </p>
-              <Image
-                src={fileData.thumbnailUrl}
-                alt={fileData.name}
-                layout="responsive"
-                width={500}
-                height={500}
-                style={{ maxWidth: "100%", border: "1px solid #CCC" }}
-              />
-            </>
+          <h2 style={{ marginTop: "20px" }}>フレーム選択</h2>
+          <ul>
+            {frames.map((frame) => (
+              <li key={frame.id}>
+                <button
+                  onClick={() =>
+                    setSelectedFrame(
+                      `https://www.figma.com/embed?embed_host=share&url=https://www.figma.com/file/${fileData.key}?node-id=${frame.id}`
+                    )
+                  }
+                >
+                  {frame.name}
+                </button>
+              </li>
+            ))}
+          </ul>
+
+          {selectedFrame && (
+            <iframe
+              src={selectedFrame}
+              style={{
+                width: "100%",
+                height: "500px",
+                border: "none",
+                marginTop: "20px",
+              }}
+              allowFullScreen
+            ></iframe>
           )}
         </div>
       )}
