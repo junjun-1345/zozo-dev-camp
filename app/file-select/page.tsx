@@ -154,8 +154,10 @@ export default function FigmaFile() {
             borderRadius: "5px",
             display: "flex",
             gap: "20px",
+            alignItems: "flex-start",
           }}
         >
+          {/* フレーム一覧 */}
           <div
             style={{
               flex: "0 0 200px",
@@ -211,48 +213,58 @@ export default function FigmaFile() {
             ))}
           </div>
 
-          <div style={{ flex: "1" }}>
+          {/* フレーム表示 */}
+          <div style={{ flex: "2" }}>
             {selectedFrame ? (
               <iframe
                 src={selectedFrame}
                 style={{
                   width: "100%",
-                  height: "300px",
+                  height: "500px",
                   border: "1px solid #CCC",
                   borderRadius: "5px",
-                  marginBottom: "20px",
                 }}
                 allowFullScreen
               ></iframe>
             ) : (
               <p style={{ textAlign: "center" }}>フレームを選択してください</p>
             )}
+          </div>
 
-            <div>
-              <h3>コメント</h3>
-              {frameComments.length > 0 ? (
-                frameComments.map((comment) => (
-                  <div
-                    key={comment.id}
-                    style={{
-                      border: "1px solid #CCC",
-                      padding: "10px",
-                      marginBottom: "10px",
-                      borderRadius: "5px",
-                    }}
-                  >
-                    <p>
-                      <strong>{comment.user.handle}</strong>: {comment.message}
-                    </p>
-                    <p style={{ fontSize: "12px", color: "#666" }}>
-                      {new Date(comment.createdAt).toLocaleString()}
-                    </p>
-                  </div>
-                ))
-              ) : (
-                <p>このフレームにはコメントがありません。</p>
-              )}
-            </div>
+          {/* コメントエリア */}
+          <div
+            style={{
+              flex: "1",
+              maxHeight: "500px",
+              overflowY: "scroll",
+              border: "1px solid #CCC",
+              borderRadius: "5px",
+              padding: "10px",
+            }}
+          >
+            <h3>コメント</h3>
+            {frameComments.length > 0 ? (
+              frameComments.map((comment) => (
+                <div
+                  key={comment.id}
+                  style={{
+                    border: "1px solid #CCC",
+                    padding: "10px",
+                    marginBottom: "10px",
+                    borderRadius: "5px",
+                  }}
+                >
+                  <p>
+                    <strong>{comment.user.handle}</strong>: {comment.message}
+                  </p>
+                  <p style={{ fontSize: "12px", color: "#666" }}>
+                    {new Date(comment.createdAt).toLocaleString()}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p>このフレームにはコメントがありません。</p>
+            )}
           </div>
         </div>
       )}
