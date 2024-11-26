@@ -17,22 +17,22 @@ type Frame = {
 type Comment = {
   id: string;
   message: string;
-  createdAt: string;
-  resolved: boolean; // 解決済みか否か
-  user: {
-    handle: string;
-    img_url: string;
-  };
   client_meta: {
     node_id?: string;
   };
+  user: {
+    handle: string;
+  };
+  createdAt: string;
 };
 
 export default function FigmaFile() {
   const [url, setUrl] = useState("");
   const [fileData, setFileData] = useState<FigmaFile | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]);
   const [selectedFrame, setSelectedFrame] = useState<string | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [frameComments, setFrameComments] = useState<Comment[]>([]); // 選択フレームのコメント
+  const [commentedFrameIds, setCommentedFrameIds] = useState<string[]>([]); // コメント付きフレームID
   const [activeFrameId, setActiveFrameId] = useState<string | null>(null);
   const [, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -49,81 +49,62 @@ export default function FigmaFile() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/figma-files/${fileKey}/frames`);
-      const data = await response.json();
+      const fileResponse = await fetch(`/api/figma-files/${fileKey}/frames`);
+      const fileData = await fileResponse.json();
 
-      if (response.ok) {
-        const frames = data.map((frame: { id: string; name: string }) => ({
-          id: frame.id,
-          name: frame.name,
-        }));
-
-        setFileData({
-          key: fileKey,
-          name: "Figma File",
-          lastModified: new Date().toISOString(),
-          frames,
-        });
-      } else {
-        setError(`エラー: ${data.error || "ファイル情報の取得に失敗しました"}`);
+      if (!fileResponse.ok) {
+        setError("ファイル情報の取得に失敗しました");
+        return;
       }
+
+      const frames = fileData.map((frame: { id: string; name: string }) => ({
+        id: frame.id,
+        name: frame.name,
+      }));
+
+      setFileData({
+        key: fileKey,
+        name: "Figma File",
+        lastModified: new Date().toISOString(),
+        frames,
+      });
+
+      const commentResponse = await fetch(
+        `/api/figma-files/${fileKey}/comments`
+      );
+      const commentData = await commentResponse.json();
+
+      if (!commentResponse.ok) {
+        setError("コメント情報の取得に失敗しました");
+        return;
+      }
+
+      setComments(commentData);
+
+      // コメント付きフレームIDを抽出
+      const frameIdsWithComments = commentData
+        .map((comment: Comment) => comment.client_meta?.node_id)
+        .filter((id: string | undefined) => id); // IDが存在する場合のみ
+      setCommentedFrameIds(frameIdsWithComments);
     } catch (error) {
       console.error("Fetch Error:", error);
-      setError("ファイル情報の取得中にエラーが発生しました");
+      setError("データの取得中にエラーが発生しました");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFrameSelection = async (frame: Frame) => {
+  const handleFrameSelection = (frame: Frame) => {
     setSelectedFrame(
       `https://www.figma.com/embed?embed_host=share&url=https://www.figma.com/file/${fileData?.key}?node-id=${frame.id}`
     );
     setActiveFrameId(frame.id);
 
-    if (fileData) {
-      try {
-        const response = await fetch(
-          `/api/figma-files/${fileData.key}/comments`
-        );
-
-        if (!response.ok) {
-          const text = await response.text();
-          console.error("Non-OK Response Text:", text);
-          setError("コメントの取得に失敗しました");
-          return;
-        }
-
-        let data;
-        try {
-          data = await response.json();
-        } catch {
-          const text = await response.text();
-          console.error("Invalid JSON Response:", text);
-          setError("レスポンスが無効です");
-          return;
-        }
-
-        // フレームIDでコメントをフィルタ
-        const frameComments = data.filter(
-          (comment: Comment) => comment.client_meta?.node_id === frame.id
-        );
-        setComments(frameComments);
-      } catch (fetchError) {
-        console.error("Fetch Error:", fetchError);
-        setError("コメントの取得中にエラーが発生しました");
-      }
-    }
-  };
-
-  const toggleResolved = (commentId: string) => {
-    setComments((prevComments) =>
-      prevComments.map((comment) =>
-        comment.id === commentId
-          ? { ...comment, resolved: !comment.resolved }
-          : comment
-      )
+    // 選択されたフレームのコメントをフィルタ
+    const frameSpecificComments = comments.filter(
+      (comment) => comment.client_meta?.node_id === frame.id
     );
+    setFrameComments(frameSpecificComments); // 選択されたフレームのコメントだけ表示
   };
 
   return (
@@ -134,7 +115,8 @@ export default function FigmaFile() {
       <div style={{ maxWidth: "600px", margin: "0 auto" }}>
         <input
           type="text"
-          value={url || ""} // undefined ではなく空文字列を渡す
+          placeholder="FigmaファイルURLを入力"
+          value={url}
           onChange={(e) => setUrl(e.target.value)}
           style={{
             width: "100%",
@@ -203,15 +185,34 @@ export default function FigmaFile() {
                       : "1px solid #CCC",
                   borderRadius: "5px",
                   cursor: "pointer",
+                  position: "relative",
                 }}
               >
                 {frame.name}
+                {commentedFrameIds.includes(frame.id) && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: "50%",
+                      right: "10px",
+                      transform: "translateY(-50%)",
+                      backgroundColor: "red",
+                      color: "white",
+                      padding: "2px 6px",
+                      borderRadius: "50%",
+                      fontSize: "12px",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    !
+                  </span>
+                )}
               </button>
             ))}
           </div>
 
           <div style={{ flex: "1" }}>
-            {selectedFrame && (
+            {selectedFrame ? (
               <iframe
                 src={selectedFrame}
                 style={{
@@ -223,47 +224,35 @@ export default function FigmaFile() {
                 }}
                 allowFullScreen
               ></iframe>
+            ) : (
+              <p style={{ textAlign: "center" }}>フレームを選択してください</p>
             )}
-          </div>
 
-          <div
-            style={{
-              flex: "0 0 300px",
-              overflowY: "scroll",
-              maxHeight: "500px",
-              borderLeft: "1px solid #CCC",
-              paddingLeft: "10px",
-            }}
-          >
-            <h3>コメント</h3>
-            {comments.map((comment) => (
-              <div
-                key={comment.id}
-                style={{
-                  border: "1px solid #CCC",
-                  padding: "10px",
-                  marginBottom: "10px",
-                  borderRadius: "5px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={comment.resolved}
-                  onChange={() => toggleResolved(comment.id)}
-                />
-                <div>
-                  <p>
-                    <strong>{comment.user.handle}</strong>: {comment.message}
-                  </p>
-                  <p style={{ fontSize: "12px", color: "#666" }}>
-                    {new Date(comment.createdAt).toLocaleString()}
-                  </p>
-                </div>
-              </div>
-            ))}
+            <div>
+              <h3>コメント</h3>
+              {frameComments.length > 0 ? (
+                frameComments.map((comment) => (
+                  <div
+                    key={comment.id}
+                    style={{
+                      border: "1px solid #CCC",
+                      padding: "10px",
+                      marginBottom: "10px",
+                      borderRadius: "5px",
+                    }}
+                  >
+                    <p>
+                      <strong>{comment.user.handle}</strong>: {comment.message}
+                    </p>
+                    <p style={{ fontSize: "12px", color: "#666" }}>
+                      {new Date(comment.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p>このフレームにはコメントがありません。</p>
+              )}
+            </div>
           </div>
         </div>
       )}
