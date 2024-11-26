@@ -1,18 +1,32 @@
 import React from "react";
 import { Comment } from "../types";
+import { parseMessage } from "../utils/helper";
 
 type CommentSectionProps = {
   frameComments: Comment[];
 };
 
+// ラベルごとの色を設定する関数
+const getLabelColor = (label: string) => {
+  const colors = [
+    "#FF5733", // レッド系
+    "#33FF57", // グリーン系
+    "#3357FF", // ブルー系
+    "#FF33A1", // ピンク系
+    "#FFC733", // イエロー系
+  ];
+  const hash = [...label].reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return colors[hash % colors.length];
+};
+
 export default function CommentSection({ frameComments }: CommentSectionProps) {
-  // コメントメッセージをラベルと本文に分割するヘルパー関数
-  const parseMessage = (message: string) => {
-    const labelMatch = message.match(/#(\S+)/); // #からスペースまでを取得
-    const label = labelMatch ? labelMatch[0] : null; // ラベル部分
-    const content = label ? message.replace(label, "").trim() : message; // ラベルを除いた本文
-    return { label, content };
-  };
+  // コメントをラベルごとに分類
+  const sortedComments = frameComments
+    .map((comment) => {
+      const { label, content } = parseMessage(comment.message);
+      return { ...comment, label, content };
+    })
+    .sort((a, b) => (a.label || "").localeCompare(b.label || ""));
 
   return (
     <div
@@ -28,64 +42,59 @@ export default function CommentSection({ frameComments }: CommentSectionProps) {
       <h3 style={{ marginBottom: "20px", fontSize: "18px", color: "#333" }}>
         コメント
       </h3>
-      {frameComments.length > 0 ? (
-        frameComments.map((comment) => {
-          const { label, content } = parseMessage(comment.message);
-          return (
-            <div
-              key={comment.id}
+      {sortedComments.length > 0 ? (
+        sortedComments.map((comment) => (
+          <div
+            key={comment.id}
+            style={{
+              backgroundColor: "#fff",
+              padding: "15px",
+              marginBottom: "10px",
+              borderRadius: "8px",
+              boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+            }}
+          >
+            <p
               style={{
-                backgroundColor: "#fff",
-                padding: "15px",
-                marginBottom: "10px",
-                borderRadius: "8px",
-                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                marginBottom: "8px",
+                fontSize: "16px",
+                fontWeight: "bold",
+                color: "#007BFF",
               }}
             >
-              <p
+              {comment.user.handle}
+            </p>
+            {comment.label && (
+              <span
                 style={{
-                  marginBottom: "8px",
-                  fontSize: "16px",
+                  display: "inline-block",
+                  backgroundColor: getLabelColor(comment.label), // ラベルごとの色
+                  color: "#fff",
+                  fontSize: "12px",
                   fontWeight: "bold",
-                  color: "#007BFF",
-                }}
-              >
-                {comment.user.handle}
-              </p>
-              {label && (
-                <span
-                  style={{
-                    display: "inline-block",
-                    backgroundColor: "#FFD700", // ラベルの背景色
-                    color: "#333", // ラベルの文字色
-                    fontSize: "12px",
-                    fontWeight: "bold",
-                    padding: "2px 6px",
-                    borderRadius: "4px",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {label}
-                </span>
-              )}
-              <p
-                style={{
+                  padding: "2px 6px",
+                  borderRadius: "4px",
                   marginBottom: "8px",
-                  fontSize: "14px",
-                  color: "#555",
-                  lineHeight: "1.5",
                 }}
               >
-                {content}
-              </p>
-              <p
-                style={{ fontSize: "12px", color: "#999", textAlign: "right" }}
-              >
-                {new Date(comment.createdAt).toLocaleString()}
-              </p>
-            </div>
-          );
-        })
+                {comment.label}
+              </span>
+            )}
+            <p
+              style={{
+                marginBottom: "8px",
+                fontSize: "14px",
+                color: "#555",
+                lineHeight: "1.5",
+              }}
+            >
+              {comment.content}
+            </p>
+            <p style={{ fontSize: "12px", color: "#999", textAlign: "right" }}>
+              {new Date(comment.createdAt).toLocaleString()}
+            </p>
+          </div>
+        ))
       ) : (
         <p style={{ textAlign: "center", color: "#666", fontSize: "14px" }}>
           このフレームにはコメントがありません。
