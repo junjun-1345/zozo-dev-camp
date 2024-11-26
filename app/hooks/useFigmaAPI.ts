@@ -77,6 +77,64 @@ export default function useFigmaAPI(initialUrl: string) {
     setFrameComments(frameSpecificComments);
   };
 
+  // コメントを特定のフレームに追加する関数
+  const addCommentToFrame = async (frameId: string, message: string) => {
+    if (!fileData) {
+      setError("ファイルデータが読み込まれていません");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `/api/figma-files/${fileData.key}/comments/add`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          // リクエストボディのフィールド名を'snake_case'に統一
+          body: JSON.stringify({ node_id: frameId, message }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("コメントの追加に失敗しました");
+      }
+
+      const newComment = await response.json();
+      setComments((prevComments) => [...prevComments, newComment]);
+
+      if (activeFrameId === frameId) {
+        setFrameComments((prevFrameComments) => [
+          ...prevFrameComments,
+          newComment,
+        ]);
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "未知のエラーが発生しました"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onAddComment = (newComment: Comment) => {
+    if (activeFrameId) {
+      // コメントリストを更新
+      setComments((prevComments) => [...prevComments, newComment]);
+
+      // 選択中フレームのコメントも更新
+      setFrameComments((prevFrameComments) => [
+        ...prevFrameComments,
+        newComment,
+      ]);
+    } else {
+      setError("フレームが選択されていません。");
+    }
+  };
+
   return {
     url,
     setUrl, // URLの更新用関数
@@ -89,5 +147,7 @@ export default function useFigmaAPI(initialUrl: string) {
     error, // エラー状態
     handleFetchFile, // ファイル取得処理
     handleFrameSelection, // フレーム選択処理
+    addCommentToFrame, // コメント追加関数
+    onAddComment, // コメント追加関数
   };
 }

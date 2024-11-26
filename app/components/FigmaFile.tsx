@@ -15,6 +15,7 @@ export default function FigmaFile() {
     activeFrameId,
     handleFetchFile,
     handleFrameSelection,
+    addCommentToFrame,
     setUrl: updateApiUrl,
     loading,
     error,
@@ -143,7 +144,11 @@ export default function FigmaFile() {
               backgroundColor: "#f1f1f1",
             }}
           >
-            <CommentSection frameComments={frameComments} />
+            <CommentSection
+              frameComments={frameComments}
+              onAddCommentToFrame={addCommentToFrame}
+              activeFrameId={activeFrameId}
+            />
           </div>
         )}
       </div>
