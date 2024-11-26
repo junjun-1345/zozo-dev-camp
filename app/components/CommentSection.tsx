@@ -1,22 +1,9 @@
 import React from "react";
 import { Comment } from "../types";
-import { parseMessage } from "../utils/helper";
+import { getLabelColor, parseMessage } from "../utils/helper";
 
 type CommentSectionProps = {
   frameComments: Comment[];
-};
-
-// ラベルごとの色を設定する関数
-const getLabelColor = (label: string) => {
-  const colors = [
-    "#FF5733", // レッド系
-    "#33FF57", // グリーン系
-    "#3357FF", // ブルー系
-    "#FF33A1", // ピンク系
-    "#FFC733", // イエロー系
-  ];
-  const hash = [...label].reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return colors[hash % colors.length];
 };
 
 export default function CommentSection({ frameComments }: CommentSectionProps) {
