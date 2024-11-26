@@ -18,6 +18,7 @@ type Comment = {
   id: string;
   message: string;
   createdAt: string;
+  resolved: boolean; // 解決済みか否か
   user: {
     handle: string;
     img_url: string;
@@ -30,7 +31,7 @@ type Comment = {
 export default function FigmaFile() {
   const [url, setUrl] = useState("");
   const [fileData, setFileData] = useState<FigmaFile | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]); // コメントリスト
+  const [comments, setComments] = useState<Comment[]>([]);
   const [selectedFrame, setSelectedFrame] = useState<string | null>(null);
   const [activeFrameId, setActiveFrameId] = useState<string | null>(null);
   const [, setError] = useState<string | null>(null);
@@ -80,27 +81,49 @@ export default function FigmaFile() {
     );
     setActiveFrameId(frame.id);
 
-    // コメントを取得
     if (fileData) {
       try {
         const response = await fetch(
           `/api/figma-files/${fileData.key}/comments`
         );
-        const data = await response.json();
 
-        if (response.ok) {
-          const frameComments = data.filter(
-            (comment: Comment) => comment.client_meta?.node_id === frame.id
-          );
-          setComments(frameComments);
-        } else {
+        if (!response.ok) {
+          const text = await response.text();
+          console.error("Non-OK Response Text:", text);
           setError("コメントの取得に失敗しました");
+          return;
         }
-      } catch (error) {
-        console.error("Fetch Error:", error);
+
+        let data;
+        try {
+          data = await response.json();
+        } catch {
+          const text = await response.text();
+          console.error("Invalid JSON Response:", text);
+          setError("レスポンスが無効です");
+          return;
+        }
+
+        // フレームIDでコメントをフィルタ
+        const frameComments = data.filter(
+          (comment: Comment) => comment.client_meta?.node_id === frame.id
+        );
+        setComments(frameComments);
+      } catch (fetchError) {
+        console.error("Fetch Error:", fetchError);
         setError("コメントの取得中にエラーが発生しました");
       }
     }
+  };
+
+  const toggleResolved = (commentId: string) => {
+    setComments((prevComments) =>
+      prevComments.map((comment) =>
+        comment.id === commentId
+          ? { ...comment, resolved: !comment.resolved }
+          : comment
+      )
+    );
   };
 
   return (
@@ -111,8 +134,7 @@ export default function FigmaFile() {
       <div style={{ maxWidth: "600px", margin: "0 auto" }}>
         <input
           type="text"
-          placeholder="FigmaファイルURLを入力"
-          value={url}
+          value={url || ""} // undefined ではなく空文字列を渡す
           onChange={(e) => setUrl(e.target.value)}
           style={{
             width: "100%",
@@ -189,7 +211,7 @@ export default function FigmaFile() {
           </div>
 
           <div style={{ flex: "1" }}>
-            {selectedFrame ? (
+            {selectedFrame && (
               <iframe
                 src={selectedFrame}
                 style={{
@@ -201,31 +223,47 @@ export default function FigmaFile() {
                 }}
                 allowFullScreen
               ></iframe>
-            ) : (
-              <p style={{ textAlign: "center" }}>フレームを選択してください</p>
             )}
+          </div>
 
+          <div
+            style={{
+              flex: "0 0 300px",
+              overflowY: "scroll",
+              maxHeight: "500px",
+              borderLeft: "1px solid #CCC",
+              paddingLeft: "10px",
+            }}
+          >
             <h3>コメント</h3>
-            <ul style={{ listStyle: "none", padding: 0 }}>
-              {comments.map((comment) => (
-                <li
-                  key={comment.id}
-                  style={{
-                    border: "1px solid #CCC",
-                    padding: "10px",
-                    marginBottom: "10px",
-                    borderRadius: "5px",
-                  }}
-                >
+            {comments.map((comment) => (
+              <div
+                key={comment.id}
+                style={{
+                  border: "1px solid #CCC",
+                  padding: "10px",
+                  marginBottom: "10px",
+                  borderRadius: "5px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={comment.resolved}
+                  onChange={() => toggleResolved(comment.id)}
+                />
+                <div>
                   <p>
                     <strong>{comment.user.handle}</strong>: {comment.message}
                   </p>
                   <p style={{ fontSize: "12px", color: "#666" }}>
                     {new Date(comment.createdAt).toLocaleString()}
                   </p>
-                </li>
-              ))}
-            </ul>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
