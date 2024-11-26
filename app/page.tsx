@@ -36,6 +36,8 @@ export default function Home() {
           <Link href={"/figma-design"}>ファイル表示</Link>
           <br />
           <Link href={"/figma-prototype"}>プロトタイプの表示</Link>
+          <br />
+          <Link href={"/figma-comments"}>コメントの表示</Link>
         </>
       )}
     </div>
