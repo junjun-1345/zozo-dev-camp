@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect } from "react";
 
 export default function Home() {
@@ -32,6 +33,7 @@ export default function Home() {
         <>
           <h1>ようこそ、ユーザー {userId} さん</h1>
           <p>ログイン成功です。</p>
+          <Link href={"/figma-design"}>ファイル表示</Link>
         </>
       )}
     </div>
