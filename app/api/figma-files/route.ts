@@ -1,35 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
-import axios from "axios";
 
 export async function GET(req: NextRequest) {
-  const accessToken = req.headers.get("Authorization")?.replace("Bearer ", "");
+  const cookies = req.headers.get("cookie") || "";
+  const accessToken = cookies
+    .split(";")
+    .find((cookie) => cookie.trim().startsWith("access_token="))
+    ?.split("=")[1];
 
   if (!accessToken) {
     return NextResponse.json(
-      { error: "Access token is required" },
-      { status: 400 }
+      { error: "Access token is missing" },
+      { status: 401 }
     );
   }
 
-  try {
-    const response = await axios.get(
-      "https://api.figma.com/v1/files/<file_key>",
-      {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }
-    );
+  console.log("Access Token:", accessToken); // デバッグ用
 
-    return NextResponse.json(response.data);
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      return NextResponse.json(
-        { error: error.message || "トークンの取得に失敗しました" },
-        { status: 500 }
-      );
-    }
+  const response = await fetch("https://api.figma.com/v1/me/files", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!response.ok) {
+    console.error(
+      "Failed to fetch files:",
+      response.status,
+      response.statusText
+    );
     return NextResponse.json(
-      { error: "トークンの取得に失敗しました" },
+      { error: "Failed to fetch files" },
       { status: 500 }
     );
   }
+
+  const data = await response.json();
+
+  // デバッグ用にレスポンス全体をログ出力
+  console.log("Fetched Figma API data:", JSON.stringify(data, null, 2));
+
+  return NextResponse.json(data.files);
 }
