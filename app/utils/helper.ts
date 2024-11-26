@@ -20,3 +20,16 @@ export const parseMessage = (message: string) => {
     : message; // ラベルを除いた本文
   return { label, content };
 };
+
+// ラベルごとの色を設定する関数
+export const getLabelColor = (label: string) => {
+  const colors = [
+    "#FF5733", // レッド系
+    "#33FF57", // グリーン系
+    "#3357FF", // ブルー系
+    "#FF33A1", // ピンク系
+    "#FFC733", // イエロー系
+  ];
+  const hash = [...label].reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return colors[hash % colors.length];
+};
