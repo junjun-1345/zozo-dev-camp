@@ -22,24 +22,98 @@ export default function Home() {
     window.location.href = "/api/auth/login";
   };
 
+  const handleLogout = async () => {
+    // サーバーサイドのログアウトエンドポイントを呼び出す
+    await fetch("/api/auth/logout", { method: "GET" });
+    // クライアントサイドのクッキーを削除
+    document.cookie = "user_id=; Max-Age=0; path=/";
+    // ユーザーIDをリセット
+    setUserId(null);
+    // トップページにリダイレクト
+    window.location.href = "/";
+  };
+
   return (
-    <div style={{ textAlign: "center", marginTop: "50px" }}>
+    <div
+      style={{
+        textAlign: "center",
+        marginTop: "50px",
+        fontFamily: "Arial, sans-serif",
+        color: "#333",
+      }}
+    >
       {!userId ? (
         <>
-          <h1>ログインしてください</h1>
-          <button onClick={handleLogin}>ログイン</button>
+          <h1
+            style={{
+              fontSize: "24px",
+              fontWeight: "bold",
+              marginBottom: "20px",
+            }}
+          >
+            ログインしてください
+          </h1>
+          <button
+            onClick={handleLogin}
+            style={{
+              padding: "10px 20px",
+              fontSize: "16px",
+              backgroundColor: "#0070f3",
+              color: "#fff",
+              border: "none",
+              borderRadius: "5px",
+              cursor: "pointer",
+              transition: "background-color 0.3s",
+            }}
+          >
+            ログイン
+          </button>
         </>
       ) : (
         <>
-          <h1>ようこそ、ユーザー {userId} さん</h1>
-          <p>ログイン成功です。</p>
-          <Link href={"/figma-design"}>ファイル表示</Link>
-          <br />
-          <Link href={"/figma-prototype"}>プロトタイプの表示</Link>
-          <br />
-          <Link href={"/figma-comments"}>コメントの表示</Link>
-          <br />
-          <Link href={"/file-select"}>ファイルの選択</Link>
+          <h1
+            style={{
+              fontSize: "24px",
+              fontWeight: "bold",
+              marginBottom: "20px",
+            }}
+          >
+            ようこそ、ユーザー {userId} さん
+          </h1>
+          <p style={{ fontSize: "18px", marginBottom: "30px" }}>
+            ログイン成功です。
+          </p>
+          <div style={{ marginBottom: "20px" }}>
+            <Link
+              href={"/file-select"}
+              style={{
+                fontSize: "16px",
+                color: "#0070f3",
+                textDecoration: "none",
+                padding: "10px 15px",
+                border: "1px solid #0070f3",
+                borderRadius: "5px",
+                transition: "background-color 0.3s",
+              }}
+            >
+              ファイルの選択
+            </Link>
+          </div>
+          <button
+            onClick={handleLogout}
+            style={{
+              padding: "10px 20px",
+              fontSize: "16px",
+              backgroundColor: "#0070f3",
+              color: "#fff",
+              border: "none",
+              borderRadius: "5px",
+              cursor: "pointer",
+              transition: "background-color 0.3s",
+            }}
+          >
+            ログアウト
+          </button>
         </>
       )}
     </div>
