@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import FrameList from "./FrameList";
 import CommentSection from "./CommentSection";
 import useFigmaAPI from "../hooks/useFigmaAPI";
+import Link from "next/link";
 
 export default function FigmaFile() {
   const [url, setUrl] = useState(""); // URLの状態管理
@@ -19,12 +20,24 @@ export default function FigmaFile() {
     setUrl: updateApiUrl,
     loading,
     error,
+    setError, // エラー状態を更新する関数
   } = useFigmaAPI(url);
 
   const handleInputChange = (value: string) => {
     setUrl(value);
     updateApiUrl(value);
   };
+
+  // エラーを一定時間後に消す
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError(null); // エラーをリセット
+      }, 5000); // 5秒後にエラーを消す
+
+      return () => clearTimeout(timer); // クリーンアップ
+    }
+  }, [error, setError]);
 
   return (
     <div
@@ -44,31 +57,44 @@ export default function FigmaFile() {
           backgroundColor: "#f8f9fa",
           padding: "10px 20px",
           boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
         }}
       >
-        <h1 style={{ textAlign: "center", marginBottom: "10px" }}>
+        {/* 左側のロゴやタイトル */}
+        <h1 style={{ margin: 0, fontSize: "20px", fontWeight: "bold" }}>
           Figmaファイル情報取得
         </h1>
-        <div style={{ maxWidth: "600px", margin: "0 auto" }}>
+
+        {/* 中央の入力フォームとボタン */}
+        <div
+          style={{
+            flex: 1,
+            maxWidth: "600px",
+            margin: "0 20px",
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
           <input
             type="text"
             placeholder="FigmaファイルURLを入力"
             value={url}
             onChange={(e) => handleInputChange(e.target.value)}
             style={{
-              width: "100%",
+              flex: 1,
               padding: "10px",
-              marginBottom: "10px",
               fontSize: "16px",
               border: "1px solid #CCC",
               borderRadius: "5px",
+              marginRight: "10px",
             }}
           />
           <button
             onClick={handleFetchFile}
             style={{
-              width: "100%",
-              padding: "10px",
+              padding: "10px 20px",
               fontSize: "16px",
               backgroundColor: "#007BFF",
               color: "#FFF",
@@ -78,21 +104,40 @@ export default function FigmaFile() {
             }}
             disabled={loading}
           >
-            {loading ? "取得中..." : "ファイル情報を取得"}
+            {loading ? "取得中..." : "取得"}
           </button>
-          {error && (
-            <p
-              style={{
-                marginTop: "10px",
-                color: "red",
-                textAlign: "center",
-              }}
-            >
-              {error}
-            </p>
-          )}
         </div>
+
+        {/* 右側のトップページに戻るボタン */}
+        <Link
+          href="/"
+          style={{
+            padding: "10px 20px",
+            fontSize: "16px",
+            backgroundColor: "#6c757d",
+            color: "#FFF",
+            textDecoration: "none",
+            borderRadius: "5px",
+          }}
+        >
+          トップに戻る
+        </Link>
       </header>
+
+      {/* エラー表示 */}
+      {error && (
+        <div
+          style={{
+            backgroundColor: "#f8d7da",
+            color: "#721c24",
+            padding: "10px 20px",
+            textAlign: "center",
+            marginTop: "10px",
+          }}
+        >
+          {error}
+        </div>
+      )}
 
       {/* コンテンツ */}
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
@@ -100,7 +145,7 @@ export default function FigmaFile() {
         {fileData && (
           <div
             style={{
-              width: "250px", // 幅を広げました
+              width: "250px",
               overflowY: "auto",
               padding: "10px",
               backgroundColor: "#f1f1f1",
@@ -122,8 +167,8 @@ export default function FigmaFile() {
               src={selectedFrame}
               style={{
                 width: "100%",
-                height: "100%", // 縦いっぱいに表示
-                border: "none", // 枠線を削除
+                height: "100%",
+                border: "none",
               }}
               allowFullScreen
             ></iframe>
@@ -138,7 +183,7 @@ export default function FigmaFile() {
         {fileData && (
           <div
             style={{
-              width: "350px", // 幅を広げました
+              width: "350px",
               overflowY: "auto",
               padding: "10px",
               backgroundColor: "#f1f1f1",

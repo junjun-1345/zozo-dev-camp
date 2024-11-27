@@ -145,6 +145,7 @@ export default function useFigmaAPI(initialUrl: string) {
     activeFrameId,
     loading,
     error, // エラー状態
+    setError, // エラー状態を更新する関数
     handleFetchFile, // ファイル取得処理
     handleFrameSelection, // フレーム選択処理
     addCommentToFrame, // コメント追加関数
