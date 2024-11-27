@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import FrameList from "./FrameList";
 import CommentSection from "./CommentSection";
 import useFigmaAPI from "../hooks/useFigmaAPI";
@@ -20,12 +20,24 @@ export default function FigmaFile() {
     setUrl: updateApiUrl,
     loading,
     error,
+    setError, // エラー状態を更新する関数
   } = useFigmaAPI(url);
 
   const handleInputChange = (value: string) => {
     setUrl(value);
     updateApiUrl(value);
   };
+
+  // エラーを一定時間後に消す
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError(null); // エラーをリセット
+      }, 5000); // 5秒後にエラーを消す
+
+      return () => clearTimeout(timer); // クリーンアップ
+    }
+  }, [error, setError]);
 
   return (
     <div
